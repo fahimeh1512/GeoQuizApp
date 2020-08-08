@@ -20,4 +20,10 @@
     <string name="button_next">بعدی</string>
     <string name="button_previous">قبلی</string>
     <string name="button_refresh">شروع دوباره</string>
+
+    <string name="warning_text">آیا برای تقلب اطمینان دارید؟</string>
+    <string name="show_answer_button">نمایش تقلب</string>
+    <string name="cheat_button">تقلب</string>
+    <string name="judgment_toast">تقلب کار بدیه!</string>
+
 </resources>

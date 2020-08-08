@@ -1,12 +1,16 @@
 package com.example.geoquizapp.controller;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,10 +24,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String BUNDLE_KEY_CURRENT_INDEX = "currentIndex";
     private static final String BUNDLE_KEY_SCORE = "score";
     private static final String BUNDLE_KEY_ANSWERED_QUESTIONS = "answeredQuestions";
-    private static final String BUNDLE_KEY_COUNT_OF_ANSWERS = "countOfAnswers";/*
-    private static final String BUNDLE_KEY_MAIN_VISIBILITY = "main_visibility";
-    private static final String BUNDLE_KEY_SCORE_VISIBILITY = "score_visibility";*/
-
+    private static final String BUNDLE_KEY_COUNT_OF_ANSWERS = "countOfAnswers";
+    public static final String EXTRA_QUESTION_ANSWER = "com.example.geoquizapp.controller.questionAnswer";
+    private static final int REQUEST_CODE_CHEAT = 0;
 
     private View view1;
     private View view2;
@@ -36,15 +39,14 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton mButtonLast;
     // For score layout
     private ImageButton mButtonRefresh;
+    private Button mCheatButton;
     private TextView mTextTrue;
     private TextView mTextFalse;
     // For score layout
     private TextView mTextDigit;
     private int mScore = 0;
     private int mCountOfAnswers = 0;
-    private int mCurrentIndex = 0;/*
-    private int mMainVisibility;
-    private int mScoreVisibility;*/
+    private int mCurrentIndex = 0;
 
     private Question[] mQuestionBank = {
             new Question(R.string.question_australia, false),
@@ -71,36 +73,27 @@ public class MainActivity extends AppCompatActivity {
         //inflate: creating object of xml layout
         setContentView(R.layout.activity_main);
 
-        if (savedInstanceState != null) {
-            Log.d(TAG, "savedInstanceState: " + savedInstanceState);/*
-            mMainVisibility = savedInstanceState.getInt(BUNDLE_KEY_MAIN_VISIBILITY);
-            mScoreVisibility = savedInstanceState.getInt(BUNDLE_KEY_SCORE_VISIBILITY);*/
-            mCurrentIndex = savedInstanceState.getInt(BUNDLE_KEY_CURRENT_INDEX);
-            mScore = savedInstanceState.getInt(BUNDLE_KEY_SCORE);
-            mCountOfAnswers = savedInstanceState.getInt(BUNDLE_KEY_COUNT_OF_ANSWERS);
-            mIsAnsweredQuestions = (boolean[])savedInstanceState.getSerializable(BUNDLE_KEY_ANSWERED_QUESTIONS);/*
-            int main_id = savedInstanceState.getInt("main_id");
-            int score_id = savedInstanceState.getInt("score_id");*/
-
-            // Sets previous states to Question objects.
-            setAnswers();
-
-            // Sets previous states to views.
-            /*view1 = findViewById(main_id);
-            view2 = findViewById(score_id);
-            view1.setVisibility(mMainVisibility);
-            view2.setVisibility(mScoreVisibility);*/
-            checkAndShowScoreScreen();
-        }
-        else
-            Log.d(TAG, "savedInstanceState is null.");
-
-
         //if we want to change logic we must first find the view objects (it must have "id")
         findViews();
         setListeners();
 
         updateQuestion();
+
+        if (savedInstanceState != null) {
+            Log.d(TAG, "savedInstanceState: " + savedInstanceState);
+            mCurrentIndex = savedInstanceState.getInt(BUNDLE_KEY_CURRENT_INDEX);
+            mScore = savedInstanceState.getInt(BUNDLE_KEY_SCORE);
+            mCountOfAnswers = savedInstanceState.getInt(BUNDLE_KEY_COUNT_OF_ANSWERS);
+            mIsAnsweredQuestions = (boolean[])savedInstanceState.getSerializable(BUNDLE_KEY_ANSWERED_QUESTIONS);
+
+            // Sets previous states to Question objects.
+            setAnswers();
+
+            checkAndShowScoreScreen();
+        }
+        else
+            Log.d(TAG, "savedInstanceState is null.");
+
     }
 
     @Override
@@ -142,19 +135,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        Log.d(TAG, "onSaveInstanceState log: " + mCurrentIndex);/*
-        mMainVisibility = view1.getVisibility();
-        mScoreVisibility = view2.getVisibility();
-        outState.putInt(BUNDLE_KEY_MAIN_VISIBILITY, mMainVisibility);
-        outState.putInt(BUNDLE_KEY_SCORE_VISIBILITY, mScoreVisibility);*/
+        Log.d(TAG, "onSaveInstanceState log: " + mCurrentIndex);
         outState.putInt(BUNDLE_KEY_CURRENT_INDEX, mCurrentIndex);
         outState.putInt(BUNDLE_KEY_SCORE, mScore);
-        outState.putInt(BUNDLE_KEY_COUNT_OF_ANSWERS, mCountOfAnswers);/*
-        outState.putCharSequence(BUNDLE_KEY_TEXT_DIGIT, mTextDigit.getText());*/
-        /*outState.putInt("main_id", R.id.main);
-        outState.putInt("score_id", R.id.score);*/
+        outState.putInt(BUNDLE_KEY_COUNT_OF_ANSWERS, mCountOfAnswers);
+
         getIsAnsweredFlags();
         outState.putSerializable(BUNDLE_KEY_ANSWERED_QUESTIONS, mIsAnsweredQuestions);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode != Activity.RESULT_OK || data == null)
+            return;
+
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            boolean isCheated = data.getBooleanExtra(CheatActivity.EXTRA_IS_CHEATER, false);
+            mQuestionBank[mCurrentIndex].setCheated(isCheated);
+        }
     }
 
     // Finds all needed views
@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         mButtonLast =  findViewById(R.id.btn_last);
         mTextTrue = findViewById(R.id.txt_true);
         mTextFalse = findViewById(R.id.txt_false);
+        mCheatButton = findViewById(R.id.cheat_button);
         mButtonRefresh = findViewById(R.id.btn_refresh);
         mTextDigit = findViewById(R.id.textDigit);
     }
@@ -234,6 +235,16 @@ public class MainActivity extends AppCompatActivity {
                 view2.setVisibility(View.GONE);
                 unsetAnswers();
                 updateQuestion();
+                emptyIsCheatedArray();
+            }
+        });
+
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, CheatActivity.class);
+                intent.putExtra(EXTRA_QUESTION_ANSWER, mQuestionBank[mCurrentIndex].isAnswerTrue());
+                startActivityForResult(intent, REQUEST_CODE_CHEAT);
             }
         });
     }
@@ -297,6 +308,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // Puts false in mIsCheated Array elements.
+    private void emptyIsCheatedArray() {
+        for (int i = 0; i < mQuestionBank.length; i++)
+            mQuestionBank[i].setCheated(false);
+    }
+
     // Gets values of mAnswered field of each Question element.
     private void getIsAnsweredFlags() {
 
@@ -305,16 +322,20 @@ public class MainActivity extends AppCompatActivity {
                 mIsAnsweredQuestions[i] = true;
     }
 
-    // Shows appropriate toast for user's answer and if he enterd correct answer, plusses to its score.
+    // Shows appropriate toast for user's answer and if he entered correct answer, pluses to its score.
     private void checkAnswer(boolean userPressed) {
 
-        if (mQuestionBank[mCurrentIndex].isAnswerTrue() == userPressed) {
-            Toast.makeText(MainActivity.this, R.string.toast_correct, Toast.LENGTH_SHORT)
-                    .show();
-            mScore += 10;
-        } else {
-            Toast.makeText(MainActivity.this, R.string.toast_incorrect, Toast.LENGTH_SHORT)
-                    .show();
+        if (mQuestionBank[mCurrentIndex].isCheated())
+            Toast.makeText(this, R.string.judgment_toast, Toast.LENGTH_SHORT).show();
+        else {
+            if (mQuestionBank[mCurrentIndex].isAnswerTrue() == userPressed) {
+                Toast.makeText(MainActivity.this, R.string.toast_correct, Toast.LENGTH_SHORT)
+                        .show();
+                mScore += 10;
+            } else {
+                Toast.makeText(MainActivity.this, R.string.toast_incorrect, Toast.LENGTH_SHORT)
+                        .show();
+            }
         }
 
         // Shows score in top of page
