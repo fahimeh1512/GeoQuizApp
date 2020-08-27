@@ -24,8 +24,8 @@ public class CheatActivity extends AppCompatActivity {
         Fragment fragment = fragmentManager.findFragmentById(R.id.cheat_fragment_container);
 
         if (fragment == null) {
-            QuizFragment quizFragment = new QuizFragment();
-            fragmentManager.beginTransaction().add(R.id.cheat_fragment_container, quizFragment).commit();
+            CheatFragment cheatFragment = new CheatFragment();
+            fragmentManager.beginTransaction().add(R.id.cheat_fragment_container, cheatFragment).commit();
         }
     }
 

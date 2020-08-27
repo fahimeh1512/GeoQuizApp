@@ -20,14 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.geoquizapp.R;
-import com.example.geoquizapp.model.Question;
+import com.example.geoquizapp.repository.QuestionRepository;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link QuizFragment
- * #newInstance} factory method to
- * create an instance of this fragment.
- */
+
 public class QuizFragment extends Fragment {
     private static final String TAG = "MainActivity";
     private static final String BUNDLE_KEY_CURRENT_INDEX = "currentIndex";
@@ -58,14 +53,7 @@ public class QuizFragment extends Fragment {
     private int mCountOfAnswers = 0;
     private int mCurrentIndex = 0;
 
-    private Question[] mQuestionBank = {
-            new Question(R.string.question_australia, false),
-            new Question(R.string.question_oceans, true),
-            new Question(R.string.question_mideast, false),
-            new Question(R.string.question_africa, true),
-            new Question(R.string.question_americas, false),
-            new Question(R.string.question_asia, false)
-    };
+    private QuestionRepository mQuestionBank;
 
     private boolean[] mIsAnsweredQuestions = new boolean[6];
 
@@ -77,6 +65,8 @@ public class QuizFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Gets instance from questions repository
+        mQuestionBank = QuestionRepository.getInstance();
     }
 
     @Override
@@ -134,7 +124,7 @@ public class QuizFragment extends Fragment {
 
         if (requestCode == REQUEST_CODE_CHEAT) {
             boolean isCheated = data.getBooleanExtra(CheatActivity.EXTRA_IS_CHEATER, false);
-            mQuestionBank[mCurrentIndex].setCheated(isCheated);
+            mQuestionBank.getQuestion(mCurrentIndex).setCheated(isCheated);
         }
     }
 
@@ -176,7 +166,7 @@ public class QuizFragment extends Fragment {
         mButtonNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.getSize();
                 updateQuestion();
             }
         });
@@ -184,7 +174,7 @@ public class QuizFragment extends Fragment {
         mButtonPrev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCurrentIndex = (mCurrentIndex - 1 + mQuestionBank.length) % mQuestionBank.length;
+                mCurrentIndex = (mCurrentIndex - 1 + mQuestionBank.getSize()) % mQuestionBank.getSize();
                 updateQuestion();
             }
         });
@@ -200,7 +190,7 @@ public class QuizFragment extends Fragment {
         mButtonLast.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCurrentIndex = mQuestionBank.length - 1;
+                mCurrentIndex = mQuestionBank.getSize() - 1;
                 updateQuestion();
             }
         });
@@ -225,7 +215,7 @@ public class QuizFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(getActivity(), CheatActivity.class);
-                intent.putExtra(EXTRA_QUESTION_ANSWER, mQuestionBank[mCurrentIndex].isAnswerTrue());
+                intent.putExtra(EXTRA_QUESTION_ANSWER, mQuestionBank.getQuestion(mCurrentIndex).isAnswerTrue());
                 startActivityForResult(intent, REQUEST_CODE_CHEAT);
             }
         });
@@ -233,7 +223,7 @@ public class QuizFragment extends Fragment {
 
     private void workOnAnswers(boolean boolAns) {
         checkAnswer(boolAns);
-        mQuestionBank[mCurrentIndex].setAnswered(true);
+        mQuestionBank.getQuestion(mCurrentIndex).setAnswered(true);
         activeButtons(false);
         mCountOfAnswers++;
         // If all questions are answered, changes layout to score layout
@@ -241,7 +231,7 @@ public class QuizFragment extends Fragment {
     }
 
     private void checkAndShowScoreScreen() {
-        if (mCountOfAnswers == mQuestionBank.length) {
+        if (mCountOfAnswers == mQuestionBank.getSize()) {
             view1.setVisibility(View.GONE);
             view2.setVisibility(View.VISIBLE);
 
@@ -250,12 +240,12 @@ public class QuizFragment extends Fragment {
     }
 
     private void updateQuestion() {
-        int questionTextResId = mQuestionBank[mCurrentIndex].getQuestionTextResId();
+        int questionTextResId = mQuestionBank.getQuestion(mCurrentIndex).getQuestionTextResId();
         mTextViewQuestion.setText(questionTextResId);
 
         // If one question is answered, disables its buttons
         // else enables them
-        if (mQuestionBank[mCurrentIndex].isAnswered())
+        if (mQuestionBank.getQuestion(mCurrentIndex).isAnswered())
             activeButtons(false);
         else
             activeButtons(true);
@@ -279,38 +269,40 @@ public class QuizFragment extends Fragment {
 
     // Sets all isAnswered fields of Question array, same az previous layout.
     private void setAnswers() {
-        for (int i = 0; i < mQuestionBank.length; i++)
-            mQuestionBank[i].setAnswered(mIsAnsweredQuestions[i]);
+        for (int i = 0; i < mQuestionBank.getSize(); i++)
+            mQuestionBank.getQuestion(i).setAnswered(mIsAnsweredQuestions[i]);
     }
 
     // Unsets all answers for refresh
     private void unsetAnswers() {
-        for (Question element: mQuestionBank)
-            element.setAnswered(false);
+        for (int i = 0; i < mQuestionBank.getSize(); i++) {
+            mQuestionBank.getQuestion(i).setAnswered(false);
+        }
+
 
     }
 
     // Puts false in mIsCheated Array elements.
     private void emptyIsCheatedArray() {
-        for (int i = 0; i < mQuestionBank.length; i++)
-            mQuestionBank[i].setCheated(false);
+        for (int i = 0; i < mQuestionBank.getSize(); i++)
+            mQuestionBank.getQuestion(i).setCheated(false);
     }
 
     // Gets values of mAnswered field of each Question element.
     private void getIsAnsweredFlags() {
 
-        for (int i = 0; i < mQuestionBank.length; i++)
-            if (mQuestionBank[i].isAnswered())
+        for (int i = 0; i < mQuestionBank.getSize(); i++)
+            if (mQuestionBank.getQuestion(i).isAnswered())
                 mIsAnsweredQuestions[i] = true;
     }
 
     // Shows appropriate toast for user's answer and if he entered correct answer, pluses to its score.
     private void checkAnswer(boolean userPressed) {
 
-        if (mQuestionBank[mCurrentIndex].isCheated())
+        if (mQuestionBank.getQuestion(mCurrentIndex).isCheated())
             Toast.makeText(getActivity(), R.string.judgment_toast, Toast.LENGTH_SHORT).show();
         else {
-            if (mQuestionBank[mCurrentIndex].isAnswerTrue() == userPressed) {
+            if (mQuestionBank.getQuestion(mCurrentIndex).isAnswerTrue() == userPressed) {
                 Toast.makeText(getActivity(), R.string.toast_correct, Toast.LENGTH_SHORT)
                         .show();
                 mScore += 10;
