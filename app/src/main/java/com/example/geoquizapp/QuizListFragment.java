@@ -18,7 +18,6 @@ import com.example.geoquizapp.repository.QuestionRepository;
 import java.util.List;
 
 public class QuizListFragment extends Fragment {
-    public static final String EXTRA_QUESTION_ID = "com.example.geoquizapp.questionId";
 
     private RecyclerView  mRecyclerView;
     private QuestionRepository mQuestionRepository;

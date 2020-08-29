@@ -22,6 +22,8 @@ import android.widget.Toast;
 import com.example.geoquizapp.R;
 import com.example.geoquizapp.repository.QuestionRepository;
 
+import java.util.UUID;
+
 
 public class QuizFragment extends Fragment {
     private static final String TAG = "MainActivity";
@@ -67,6 +69,8 @@ public class QuizFragment extends Fragment {
 
         // Gets instance from questions repository
         mQuestionBank = QuestionRepository.getInstance();
+
+        mCurrentIndex = getActivity().getIntent().getIntExtra(QuestionAdapter.EXTRA_QUESTION_INDEX, 0);
     }
 
     @Override
@@ -231,7 +235,7 @@ public class QuizFragment extends Fragment {
     }
 
     private void checkAndShowScoreScreen() {
-        if (mCountOfAnswers == mQuestionBank.getSize()) {
+         if (mCountOfAnswers == mQuestionBank.getSize()) {
             view1.setVisibility(View.GONE);
             view2.setVisibility(View.VISIBLE);
 

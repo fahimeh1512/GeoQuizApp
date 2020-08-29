@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,11 +17,12 @@ import com.example.geoquizapp.model.Question;
 
 import java.util.List;
 
-import static com.example.geoquizapp.QuizListFragment.EXTRA_QUESTION_ID;
 
 public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.QuestionHolder> {
     private List<Question> mQuestions;
     private Context mContext;
+
+    public static final String EXTRA_QUESTION_INDEX = "com.example.geoquizapp.controller.questionIndex";
 
     @NonNull
     @Override
@@ -35,6 +37,7 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.Questi
     @Override
     public void onBindViewHolder(@NonNull QuestionHolder holder, int position) {
         holder.bind(mQuestions.get(position));
+        holder.mPosition = position;
     }
 
     @Override
@@ -60,12 +63,25 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.Questi
         private TextView mQuestionText;
         private CheckBox mCheckBox;
         private Question mQuestion;
+        private int mPosition;
 
         // Create view holder as inner class
         public QuestionHolder(@NonNull View itemView) {
             super(itemView);
 
             findViews(itemView);
+
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //TODO: Refactore creating new intent.
+                    Intent intent = new Intent(mContext, MainActivity.class);
+                    intent.putExtra(EXTRA_QUESTION_INDEX, mPosition);
+                    mContext.startActivity(intent);
+                }
+            });
+
         }
 
         private void findViews(View view) {
@@ -76,16 +92,9 @@ public class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.Questi
         private void bind(Question question) {
             mQuestion = question;
             mQuestionText.setText(mQuestion.getQuestionTextResId());
-            mCheckBox.setChecked(mQuestion.isAnswered());
-            mCheckBox.setClickable(false);
+            mCheckBox.setChecked(mQuestion.isAnswered());/*
+            mCheckBox.setClickable(false);*/
         }
 
-        /*@Override
-        public void onClick(View v) {
-            Intent intent = new Intent(mContext, MainActivity.class);
-            intent.putExtra(EXTRA_QUESTION_ID, mQuest);
-            startActivity(intent);
-
-        }*/
     }
 }
