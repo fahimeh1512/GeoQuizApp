@@ -19,6 +19,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.geoquizapp.QuizListFragment;
 import com.example.geoquizapp.R;
 import com.example.geoquizapp.repository.QuestionRepository;
 
@@ -32,6 +33,7 @@ public class QuizFragment extends Fragment {
     private static final String BUNDLE_KEY_ANSWERED_QUESTIONS = "answeredQuestions";
     private static final String BUNDLE_KEY_COUNT_OF_ANSWERS = "countOfAnswers";
     public static final String EXTRA_QUESTION_ANSWER = "com.example.geoquizapp.controller.questionAnswer";
+    public static final String EXTRA_QUESTION_IS_ANSWERED = "com.example.geoquizapp.controller.questionIsAnswered";
     private static final int REQUEST_CODE_CHEAT = 0;
     private CheatFragment cheatFragment;
 
@@ -70,7 +72,7 @@ public class QuizFragment extends Fragment {
         // Gets instance from questions repository
         mQuestionBank = QuestionRepository.getInstance();
 
-        mCurrentIndex = getActivity().getIntent().getIntExtra(QuestionAdapter.EXTRA_QUESTION_INDEX, 0);
+        mCurrentIndex = getActivity().getIntent().getIntExtra(QuizListFragment.QuestionAdapter.EXTRA_QUESTION_INDEX, 0);
     }
 
     @Override
@@ -157,6 +159,11 @@ public class QuizFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 workOnAnswers(true);
+
+                // Set intent
+                /*Intent intent = new Intent();
+                intent.putExtra(EXTRA_QUESTION_IS_ANSWERED, mQuestionBank.getQuestion(mCurrentIndex).isAnswered());
+                getActivity().setResult(getActivity().RESULT_OK, intent);*/
             }
         });
 
